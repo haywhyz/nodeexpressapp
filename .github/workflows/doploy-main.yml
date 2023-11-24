@@ -131,13 +131,12 @@
 
 
 
-
 on:
   push:
     branches:
       - main
 
-name: Deploy nodeapp  to  on dockerhub
+name: Deploy nodeapp to Docker Hub with Trivy scan
 
 jobs:
   deploy:
@@ -147,6 +146,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
+      - name: Print variable values
+        run: |
+          echo "DOCKERHUB_REPO: $DOCKERHUB_REPO"
+          echo "IMAGE_TAG: $IMAGE_TAG"
 
       - name: Scan Docker image with Trivy
         run: |
