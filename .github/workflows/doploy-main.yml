@@ -34,7 +34,41 @@
 
 
 
-name: Build, Push, and Scan Docker Image
+# name: Build, Push, and Scan Docker Image
+
+# on:
+#   push:
+#     branches:
+#       - main
+
+# jobs:
+#   build-push-scan:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#     - name: Checkout Repository
+#       uses: actions/checkout@v2
+
+#     - name: Set up Docker
+#       uses: docker://docker
+
+#     - name: Build Docker Image
+#       run: docker build -t ${{ secrets.DOCKER_REGISTRY }}5056/nodeapp:latest .
+
+#     - name: Push Docker Image to Registry
+#       run: |
+#         echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin ${{ secrets.DOCKER_REGISTRY }}
+#         docker push ${{ secrets.DOCKER_REGISTRY }}5056/nodeapp:latest
+
+#     - name: Set up Trivy
+#       run: |
+#         docker pull aquasec/trivy:latest
+#         docker tag aquasec/trivy:latest trivy:latest
+
+#     - name: Scan Docker Image
+#       run: docker run --rm trivy:latest --ignore-unfixed ${{ secrets.DOCKER_REGISTRY }}5056/nodeapp:latest
+
+name: Build, Scan, and Deploy Docker Image
 
 on:
   push:
@@ -42,117 +76,53 @@ on:
       - main
 
 jobs:
-  build-push-scan:
+  build:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v2
 
-    - name: Set up Docker
-      uses: docker://docker
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
 
     - name: Build Docker Image
-      run: docker build -t ${{ secrets.DOCKER_REGISTRY }}5056/nodeapp:latest .
-
-    - name: Push Docker Image to Registry
       run: |
-        echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin ${{ secrets.DOCKER_REGISTRY }}
-        docker push ${{ secrets.DOCKER_REGISTRY }}5056/nodeapp:latest
+        docker buildx create --use
+        docker buildx inspect --bootstrap
+        docker buildx build -t 5056/nodeapp:latest .
 
-    - name: Set up Trivy
+  scan:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Scan Docker Image with Trivy
       run: |
-        docker pull aquasec/trivy:latest
-        docker tag aquasec/trivy:latest trivy:latest
+        docker buildx create --use
+        docker buildx inspect --bootstrap
+        docker run --rm -v $(pwd):/src aquasec/trivy 5056/nodeapp:latest
 
-    - name: Scan Docker Image
-      run: docker run --rm trivy:latest --ignore-unfixed ${{ secrets.DOCKER_REGISTRY }}5056/nodeapp:latest
+  deploy:
+    runs-on: ubuntu-latest
 
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
 
-# on:
-#    push:
-#      branches:
-#        - main
-       
-# name: Deploy Kredi insurance API on staging
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
 
-# jobs:
-#   deploy:
-#     name: Deploy
-#     runs-on: ubuntu-latest
+    - name: Login to Docker Hub
+      run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_REGISTRY }}
 
-#     steps:
-#     - name: Checkout
-#       uses: actions/checkout@v2
-
-#     - name: Configure docker credentials
-#       uses: aws-actions/configure-aws-credentials@v1
-#       with:
-#         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#         aws-region: us-east-2
-
-#     - name: Login to Amazon ECR
-#       id: login-ecr
-#       uses: aws-actions/amazon-ecr-login@v1
-#       # login to Amazon ECR successful
-#     - name: Build, tag, and push image to Amazon ECR
-#       id: build-image
-#       env:
-#         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-#         ECR_REPOSITORY: dollar-card-test-api
-#         IMAGE_TAG: ${{ github.sha }}
-#       run: |
-#         # Build a docker container 
-#         # push it to ECR so that it can be
-#         # be deployed to ECS.
-#         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-#         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-#         echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-
-
-# name: Build and push Docker image with Trivy vulnerability scan
-
-# on:
-#   push:
-#     branches: [ main ]
-
-# jobs:
-#   trivy-scan:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout repository
-#         uses: actions/checkout@v3
-
-#       - name: Install vulnerabilities-action
-#         uses: aquasecurity/vulnerabilities-action@v2.0.1 
-
-#       - name: Scan Docker image
-#         run: aquasecurity/vulnerabilities-action@v1.7.2 scan-image --image latest
-
-#       - name: Upload SARIF report
-#         uses: actions/upload-artifact@v3
-#         with:
-#           name: trivy-scan-results
-#           path: report.sarif
-
-#   build-and-push:
-#     needs: trivy-scan
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout repository
-#         uses: actions/checkout@v3
-
-#       - name: Login to Docker registry
-#         uses: docker/login-action@v2.1.0
-#         with:
-#           registry: ${{ secrets.DOCKER_REGISTRY }}
-#           username: ${{ secrets.DOCKER_USERNAME }}
-#           password: ${{ secrets.DOCKER_PASSWORD }}
-
-#       - name: Build Docker image
-#         uses: docker/build-push-action@v3.1.2
-#         with:
-#           context: .
-#           push: true
-#           tags: ${{ secrets.DOCKER_REGISTRY }}/5056/nodeapp:latest
+    - name: Push Docker Image to Docker Hub
+      run: |
+        docker buildx create --use
+        docker buildx inspect --bootstrap
+        docker push 5056/nodeapp:latest
