@@ -1,3 +1,38 @@
+# name: Build, Push, and Scan Docker Image
+
+# on:
+#   push:
+#     branches:
+#       - main
+
+# jobs:
+#   build-push-scan:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#     - name: Checkout Repository
+#       uses: actions/checkout@v2
+
+#     - name: Set up Docker
+#       uses: docker/setup-docker-action@v2
+#       with:
+#         dockerfile: ./Dockerfile 
+
+#     - name: Build Docker Image
+#       run: docker build -t ${{ secrets.DOCKER_REGISTRY }}/your-image-name:latest .
+
+#     - name: Push Docker Image to Registry
+#       run: |
+#         echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin ${{ secrets.DOCKER_REGISTRY }}
+#         docker push ${{ secrets.DOCKER_REGISTRY }}/nodeapp:latest
+
+#     - name: Set up Trivy
+#       uses: aquasecurity/trivy-action@v0.9.3
+
+#     - name: Scan Docker Image
+#       run: trivy ${{ secrets.DOCKER_REGISTRY }}/your-image-name:latest
+
+
 name: Build, Push, and Scan Docker Image
 
 on:
@@ -14,12 +49,10 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Set up Docker
-      uses: docker/setup-docker-action@v2
-      with:
-        dockerfile: ./Dockerfile 
+      uses: docker/setup-docker-action
 
     - name: Build Docker Image
-      run: docker build -t ${{ secrets.DOCKER_REGISTRY }}/your-image-name:latest .
+      run: docker build -t ${{ secrets.DOCKER_REGISTRY }}/nodeapp:latest .
 
     - name: Push Docker Image to Registry
       run: |
@@ -27,7 +60,7 @@ jobs:
         docker push ${{ secrets.DOCKER_REGISTRY }}/nodeapp:latest
 
     - name: Set up Trivy
-      uses: aquasecurity/trivy-action@v0.9.3
+      uses: docker://aquasec/trivy:latest
 
     - name: Scan Docker Image
-      run: trivy ${{ secrets.DOCKER_REGISTRY }}/your-image-name:latest
+      run: trivy --ignore-unfixed ${{ secrets.DOCKER_REGISTRY }}/nodeapp:latest
