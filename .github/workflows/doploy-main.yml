@@ -135,7 +135,7 @@
 on:
   push:
     branches:
-      - dev
+      - main
 
 name: Deploy nodeapp  to  on dockerhub
 
