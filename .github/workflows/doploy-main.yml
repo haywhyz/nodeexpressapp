@@ -108,7 +108,7 @@ jobs:
       run: |
         docker buildx create --use
         docker buildx inspect --bootstrap
-        docker run --rm -v $(pwd):/src aquasec/trivy -q --input-type=image --exit-code 0 docker.io/5056/nodeapp:latest
+        docker run --rm -v $(pwd):/src aquasec/trivy -q docker.io/5056/nodeapp:latest
 
   deploy:
     runs-on: ubuntu-latest
