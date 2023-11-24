@@ -106,7 +106,7 @@ jobs:
       run: |
         docker buildx create --use
         docker buildx inspect --bootstrap
-        docker run --rm -v $(pwd):/src aquasec/trivy -q -d docker.io/5056/nodeapp:latest
+        docker run --rm -v $(pwd):/src aquasec/trivy -q docker.io/5056/nodeapp:latest
 
   deploy:
     runs-on: ubuntu-latest
@@ -119,10 +119,11 @@ jobs:
       uses: docker/setup-buildx-action@v1
 
     - name: Login to Docker Hub
-      run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_REGISTRY }}
+      run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
 
     - name: Push Docker Image to Docker Hub
       run: |
         docker buildx create --use
         docker buildx inspect --bootstrap
         docker push docker.io/5056/nodeapp:latest
+
