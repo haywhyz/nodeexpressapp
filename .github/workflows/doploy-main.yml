@@ -130,6 +130,7 @@
   #       docker push docker.io/5056/nodeapp:latest
 
 
+
 on:
   push:
     branches:
@@ -152,6 +153,9 @@ jobs:
           echo "IMAGE_TAG: $IMAGE_TAG"
 
       - name: Scan Docker image with Trivy
+        env:
+          DOCKERHUB_REPO: 5056/nodeapp
+          IMAGE_TAG: ${{ github.sha }}
         run: |
           echo "Pulling Docker image: $DOCKERHUB_REPO:$IMAGE_TAG"
           docker pull $DOCKERHUB_REPO:$IMAGE_TAG
@@ -175,3 +179,4 @@ jobs:
           docker build -t $DOCKERHUB_REPO:$IMAGE_TAG .
           docker push $DOCKERHUB_REPO:$IMAGE_TAG
           echo "::set-output name=image::$DOCKERHUB_REPO:$IMAGE_TAG"
+
