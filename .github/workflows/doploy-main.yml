@@ -1,0 +1,33 @@
+name: Build, Push, and Scan Docker Image
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-push-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+    - name: Set up Docker
+      uses: docker/setup-docker-action@v2
+      with:
+        dockerfile: ./Dockerfile 
+
+    - name: Build Docker Image
+      run: docker build -t ${{ secrets.DOCKER_REGISTRY }}/your-image-name:latest .
+
+    - name: Push Docker Image to Registry
+      run: |
+        echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin ${{ secrets.DOCKER_REGISTRY }}
+        docker push ${{ secrets.DOCKER_REGISTRY }}/nodeapp:latest
+
+    - name: Set up Trivy
+      uses: aquasecurity/trivy-action@v0.9.3
+
+    - name: Scan Docker Image
+      run: trivy ${{ secrets.DOCKER_REGISTRY }}/your-image-name:latest
