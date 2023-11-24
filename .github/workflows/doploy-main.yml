@@ -130,7 +130,6 @@
   #       docker push docker.io/5056/nodeapp:latest
 
 
-
 on:
   push:
     branches:
@@ -154,7 +153,9 @@ jobs:
 
       - name: Scan Docker image with Trivy
         run: |
+          echo "Pulling Docker image: $DOCKERHUB_REPO:$IMAGE_TAG"
           docker pull $DOCKERHUB_REPO:$IMAGE_TAG
+          echo "Running Trivy scan on Docker image: $DOCKERHUB_REPO:$IMAGE_TAG"
           docker run --rm -v $(pwd):/workdir -w /workdir aquasec/trivy $DOCKERHUB_REPO:$IMAGE_TAG
 
       - name: Login to Docker Hub
