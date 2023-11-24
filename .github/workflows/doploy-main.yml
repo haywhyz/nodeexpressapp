@@ -124,17 +124,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install Trivy
-        uses: trivy/trivy-action@v3.7.6
+      - name: Install vulnerabilities-action
+        uses: aquasecurity/vulnerabilities-action@v1.7.2
 
       - name: Scan Docker image
-        run: trivy image --format sarif --severity CRITICAL,HIGH,MEDIUM --output vuln.sarif scanned
+        run: aquasecurity/vulnerabilities-action@v1.7.2 scan-image --image latest
 
       - name: Upload SARIF report
         uses: actions/upload-artifact@v3
         with:
           name: trivy-scan-results
-          path: vuln.sarif
+          path: report.sarif
 
   build-and-push:
     needs: trivy-scan
