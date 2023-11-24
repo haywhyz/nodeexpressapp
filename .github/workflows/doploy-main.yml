@@ -130,13 +130,12 @@
   #       docker push docker.io/5056/nodeapp:latest
 
 
-
 on:
   push:
     branches:
       - main
 
-name: Deploy nodeapp to Docker Hub with version tag
+name: Deploy nodeapp to Docker Hub with Trivy scan
 
 jobs:
   deploy:
@@ -147,6 +146,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Print variable values
+        run: |
+          echo "DOCKERHUB_REPO: $DOCKERHUB_REPO"
+          echo "IMAGE_TAG: $IMAGE_TAG"
+
+      # - name: Scan Docker image with Trivy
+      #   run: |
+      #     docker pull $DOCKERHUB_REPO:$IMAGE_TAG
+      #     docker run --rm -v $(pwd):/workdir -w /workdir aquasec/trivy $DOCKERHUB_REPO:$IMAGE_TAG
+
       - name: Login to Docker Hub
         uses: docker/login-action@v1
         with:
@@ -154,14 +163,17 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build, tag, and push image to Docker Hub
+        id: build-image
         env:
           DOCKERHUB_REPO: 5056/nodeapp
-          IMAGE_TAG: ${{ steps.version.outputs.VERSION }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
           # Build a docker container 
           # push it to Docker Hub.
           docker build -t $DOCKERHUB_REPO:$IMAGE_TAG .
           docker push $DOCKERHUB_REPO:$IMAGE_TAG
+          echo "::set-output name=image::$DOCKERHUB_REPO:$IMAGE_TAG"
+
 
 
 
